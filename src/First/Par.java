@@ -1,5 +1,6 @@
 package First;
 
+import java.lang.invoke.StringConcatFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
@@ -9,9 +10,10 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.*;
 
 public class Par {
-    public static List<String> lines = new ArrayList<>();
-    private static void readFile(Path path){
+    public static List<String> list = new ArrayList<>();
+    private static void readFile(String name, List<String> lines){
         try{
+            Path path =Paths.get(System.getProperty("user.dir") +"\\input.txt");
             lines = Files.readAllLines(path);
         }catch (Exception e){
             e.printStackTrace();
@@ -32,13 +34,11 @@ public class Par {
         }
     }
     public static void start(){
-        readFile(Paths.get(System.getProperty("user.dir") +"\\input.txt"));
-        Long res = lines.stream().distinct().mapToLong(Long::parseLong).boxed().reduce(0L, Long::sum);
+        readFile("input.txt",list);
+        Long res = list.stream().distinct().mapToLong(Long::parseLong).boxed().reduce(0L, Long::sum);
         writeinlist(Paths.get(System.getProperty("user.dir") +"\\output.txt"),res);
     }
     public static void main(String[] args){
-        readFile(Paths.get(System.getProperty("user.dir") +"\\input.txt"));
-        Long res = lines.stream().distinct().mapToLong(Long::parseLong).boxed().reduce(0L, Long::sum);
-        writeinlist(Paths.get(System.getProperty("user.dir") +"\\output.txt"),res);
+        start();
     }
 }
