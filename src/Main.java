@@ -3,7 +3,11 @@ import Second.BinartSearch;
 
 public class Main {
     public static void main(String[] args) {
-        BinartSearch.start();
+        Testingclass testingclass = new Testingclass();
+        testingclass.start();
+        //BinartSearch.start();
+        Testingclass.MeasurementResult res = testingclass.stop();
+        System.out.println(res);
     }
 
     //       Testingclass test = new Testingclass();
