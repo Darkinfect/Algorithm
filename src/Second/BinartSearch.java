@@ -12,15 +12,9 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class BinartSearch {
+    private static int UpperBound;
+    private static int LowerBound;
     private static int n;
-    private static int foundMinIndexNumber(int[] arr,int index){
-        if( index == 0) return index;
-        if(arr[index] > arr[index-1]){
-            return index;
-        }
-        int index2 = foundMinIndexNumber(arr,index-1);
-        return index2;
-    }
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
@@ -35,41 +29,24 @@ public class BinartSearch {
         for (int i = 0; i < k; i++) {
             queries[i] = scanner.nextInt();
         }
+
+        for(int i = 0; i < k; i++){
+        }
     }
-    private static int upperbound(int[] arr,int target){
-        int left = 0;
-        int right = arr.length;
-        while (left < right) {
-            int mid = left + (right - left) / 2;
-            if (arr[mid] <= target) {
-                left = mid + 1;
-            } else {
-                right = mid;
+    private static int LowerBound(int[] arr, int target){
+        int low =0;
+        int high = arr.length-1;
+        int resault = arr.length;
+        while(low<high){
+            int mid = low + (high - low)/2;
+            if(arr[high]>=target){
+                resault = mid;
+                high = mid -1;
+            }else{
+                return resault;
             }
         }
-        return left;
+        return 0;
     }
-    private static int binSearch(int[] massive, int target){
-        int min, max, index;
-        max = massive.length;
-        min = 0;
-        if(target > massive[max-1] || target < massive[min]){
-            return n;
-        }
-        while(min<max){
-            index = min + (max-min) / 2;
-            if(massive[index] == target){
-                return foundMinIndexNumber(massive,index);
-            }
-            if(target > massive[index]){;
-                min = index + 1;
-                continue;
-            }
-            if(target< massive[index]){
-                max = index;
-                continue;
-            }
-        }
-        return n;
-    }
+
 }
