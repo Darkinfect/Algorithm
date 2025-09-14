@@ -1,15 +1,8 @@
 package Second;
 
-import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+
 import java.util.Scanner;
-import java.util.stream.Collectors;
+
 
 public class BinartSearch {
     private static int UpperBound;
@@ -29,24 +22,38 @@ public class BinartSearch {
         for (int i = 0; i < k; i++) {
             queries[i] = scanner.nextInt();
         }
+        for(int i = 0; i < k; i++) {
 
-        for(int i = 0; i < k; i++){
+            int lower = LowerBound(arr, queries[i]);
+            int upper = UpperBound(arr, queries[i]);
+
+            System.out.println((lower == upper ? "0" : "1") + " " + lower + " " + upper);
         }
     }
     private static int LowerBound(int[] arr, int target){
         int low =0;
-        int high = arr.length-1;
-        int resault = arr.length;
+        int high = n;
         while(low<high){
             int mid = low + (high - low)/2;
-            if(arr[high]>=target){
-                resault = mid;
-                high = mid -1;
+            if(arr[mid]>=target){
+                high = mid;
             }else{
-                return resault;
+              low = mid +1;
             }
         }
-        return 0;
+        return low;
     }
-
+    private static int UpperBound(int[] arr, int target){
+        int low =0;
+        int high = n;
+        while(low<high){
+            int mid = low + (high - low)/2;
+            if(arr[mid]<=target){
+                low = mid + 1;
+            }else{
+                high= mid;
+            }
+        }
+        return low;
+    }
 }
