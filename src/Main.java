@@ -1,11 +1,12 @@
 import First.Par;
+import RecRelation.pr01;
 import Second.BinartSearch;
 
 public class Main {
     public static void main(String[] args) {
         Testingclass testingclass = new Testingclass();
         testingclass.start();
-        //BinartSearch.start();
+        pr01.start();
         Testingclass.MeasurementResult res = testingclass.stop();
         System.out.println(res);
     }
