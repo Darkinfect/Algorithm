@@ -11,10 +11,10 @@ import static java.util.stream.Collectors.*;
 
 public class Par {
     public static List<String> list = new ArrayList<>();
-    private static void readFile(String name, List<String> lines){
+    private static void readFile(String name){
         try{
             Path path =Paths.get(System.getProperty("user.dir") +"\\input.txt");
-            lines = Files.readAllLines(path);
+            list = Files.readAllLines(path);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -34,7 +34,7 @@ public class Par {
         }
     }
     public static void start(){
-        readFile("input.txt",list);
+        readFile("input.txt");
         Long res = list.stream().distinct().mapToLong(Long::parseLong).boxed().reduce(0L, Long::sum);
         writeinlist(Paths.get(System.getProperty("user.dir") +"\\output.txt"),res);
     }
