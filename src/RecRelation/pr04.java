@@ -1,5 +1,6 @@
 package RecRelation;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,10 +32,29 @@ public class pr04 {
         int countMatrix = Integer.parseInt(list.get(0));
         parseMatrixSize();
         int[][] arr = new int[countMatrix][countMatrix];
-        for(int i = 0; i < arr.length; i++){
+        for(int i = 0; i < arr.length-1; i++) {
             arr[i][i] = 0;
-            if(i +1 == arr.length) break;
-            arr[i][i+1] = iner.get(i).get(0) * iner.get(i).get(1) * iner.get(i+1).get(1);
+            arr[i][i + 1] = iner.get(i).get(0) * iner.get(i).get(1) * iner.get(i + 1).get(1);
+        }
+        for(int len = 2; len < countMatrix; len++) {
+            for(int i = 0; i < countMatrix - len; i++) {
+                int j = i + len;
+                arr[i][j] = Integer.MAX_VALUE;
+
+                for(int k = i; k < j; k++) {
+                    int cost = arr[i][k] + arr[k + 1][j] +
+                            iner.get(i).get(0) * iner.get(k).get(1) * iner.get(j).get(1);
+                    arr[i][j] = Math.min(arr[i][j], cost);
+                }
+            }
+        }
+        writeinlist(Paths.get(System.getProperty("user.dir") +"//output.txt"), arr[0][arr.length-1]);
+    }
+    private static void writeinlist(Path path,int res) {
+        try {
+            Files.write(path, String.valueOf(res).getBytes(StandardCharsets.UTF_8));
+        }catch (Exception exception){
+            exception.printStackTrace();
         }
     }
     public static void main(String[] args) {
