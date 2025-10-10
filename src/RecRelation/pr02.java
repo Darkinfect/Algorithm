@@ -10,8 +10,6 @@ public class pr02 {
         if (numRows <= 0) {
             return triangle;
         }
-
-        // Первая строка всегда [1]
         List<Integer> firstRow = new ArrayList<>();
         firstRow.add(1);
         triangle.add(firstRow);
@@ -20,10 +18,9 @@ public class pr02 {
             List<Integer> prevRow = triangle.get(i - 1);
             List<Integer> currentRow = new ArrayList<>();
 
-            // Первый элемент строки всегда 1
             currentRow.add(1);
 
-            // Каждый следующий элемент равен сумме двух элементов выше
+
             for (int j = 1; j < i; j++) {
                 currentRow.add((prevRow.get(j - 1) + prevRow.get(j)) % 1000000007);
             }
