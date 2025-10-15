@@ -8,13 +8,19 @@ public class indpr {
         Scanner sc = new Scanner(System.in);
         int n = sc.nextInt();
         int k = sc.nextInt();
-        int p = 0;
         int[] massive = new int[n];
-        while(n>p){
-            massive[p] = sc.nextInt();
-            p++;
+        for(int i = 0; i < n; i++){
+            massive[i] = sc.nextInt();
         }
-        int[][] dp = new int[n+1][k+1];
+        int[][] minRange = new int[n][n];
+        for (int l = 0; l < n; l++) {
+            int minVal = massive[l];
+            for (int r = l; r < n; r++) {
+                minVal = Math.min(minVal, massive[r]);
+                minRange[l][r] = minVal;
+            }
+        }
+        long[][] dp = new long[n+1][k+1];
         for (int i = 0; i <= n; i++){
             Arrays.fill(dp[i], Integer.MIN_VALUE);
         }
@@ -22,13 +28,17 @@ public class indpr {
 
         for(int i =1; i <= n; i++){
             for(int j = 1; j<= Math.min(i,k); j++){
-                int currMin = Integer.MAX_VALUE;
+                long bet = Integer.MIN_VALUE;
                 for(int m = i-1; m >= j -1; m-- ){
-                    currMin = Math.min(currMin,massive[m]);
-                    if(dp[m][j-1] != Integer.MIN_VALUE){
-                        dp[i][j] = Math.max(dp[i][j], dp[m][j-1] + currMin);
+                    long prev = dp[m][j-1];
+                    if(prev == Integer.MIN_VALUE){
+                        continue;
                     }
+                    int curr = minRange[m][i-1];
+                    long som = prev + curr;
+                    if(som>bet) bet = som;
                 }
+                dp[i][j] = bet;
             }
         }
         System.out.println(dp[n][k]);

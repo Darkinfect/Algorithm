@@ -7,20 +7,18 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class pr07 {
-    private static int n = 0;
-    private static List<Integer> integerList = new ArrayList<>();
+    private static final List<Integer> integerList = new ArrayList<>();
     private static List<String> list = new ArrayList<>();
     private static void readFile(){
         try{
             Path path = Paths.get(System.getProperty("user.dir") +"//input.txt");
             list = Files.readAllLines(path);
-            n = Integer.parseInt(list.get(0));
+            int n = Integer.parseInt(list.get(0));
             list.remove(0);
         }catch (Exception e){
-            e.printStackTrace();
+            System.out.println(Arrays.toString(e.getStackTrace()));;
         }
     }
     private static void start(){
@@ -37,7 +35,7 @@ public class pr07 {
                 dp.set(left,s);
             }
         }
-        writeinlist(Paths.get(System.getProperty("user.dir") + "\\output.txt"),dp.size());
+        sterilising(Paths.get(System.getProperty("user.dir") + "\\output.txt"),dp.size());
     }
     public static void main(String[] args) {
         start();
@@ -55,7 +53,7 @@ public class pr07 {
         }
         return low;
     }
-    private static void writeinlist(Path path,Integer res) {
+    private static void sterilising(Path path, Integer res) {
         try {
             Files.write(path, String.valueOf(res).getBytes(StandardCharsets.UTF_8));
         }catch (Exception exception){
