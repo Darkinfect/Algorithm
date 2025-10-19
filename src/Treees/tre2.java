@@ -3,7 +3,6 @@ package Treees;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,13 +12,19 @@ import java.util.Deque;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class tre1 {
+public class tre2 {
     private static Node rootOfTree;
     private static List<Integer> list = new ArrayList<>();
+    private static int target;
     private static void readFile(){
         try{
             Path path = Paths.get(System.getProperty("user.dir") +"//input.txt");
-            list = Files.readAllLines(path).stream().map(Integer::parseInt).distinct().collect(Collectors.toList());
+            List<String> currFile = new ArrayList<>();
+            currFile = Files.readAllLines(path);
+            target = Integer.parseInt(currFile.get(0));
+            currFile.remove(0);
+            currFile.remove(0);
+            list = currFile.stream().map(Integer::parseInt).distinct().collect(Collectors.toList());
         }catch (Exception e){
             e.printStackTrace(System.err);
         }
@@ -37,8 +42,43 @@ public class tre1 {
         readFile();
         createTree();
         list.clear();
-        clr(rootOfTree);
+        deleteRight();
         writeInList(list);
+    }
+    private static void deleteRight(){
+        Node targetNode = findCurr();
+        if(targetNode == null) {
+            clr(rootOfTree);
+            return;
+        }
+        Node res;
+        if(targetNode.left == null){
+            res = targetNode.right;
+        }else if(targetNode.right == null){
+            res = targetNode.left;
+        }else{
+            Node minNodePar = targetNode;
+            Node minNode = targetNode.right;
+            while(minNode.left != null){
+                minNodePar = minNode;
+                minNode = minNode.left;
+            }
+            targetNode.a = minNode.a;
+            replChild(minNodePar,minNode,minNode.right);
+            clr(rootOfTree);
+            return;
+        }
+        replChild(targetNode.parent,targetNode,res);
+        clr(rootOfTree);
+    }
+    private static void replChild(Node par, Node old, Node newCh){
+        if(par == null){
+           rootOfTree = newCh;
+        }else if(par.left== old){
+            par.left = newCh;
+        }else if(par.right == old){
+            par.right = newCh;
+        }
     }
     public static void clr(Node node){
         if(node !=null){
@@ -52,7 +92,20 @@ public class tre1 {
             }
         }
     }
-    public static void createTree(){
+    private static Node findCurr(){
+        Node currNode = rootOfTree;
+        while(currNode != null){
+            if(currNode.a == target){
+                return currNode;
+            }else if(currNode.a < target){
+                currNode = currNode.right;
+            }else {
+                currNode = currNode.left;
+            }
+        }
+        return null;
+    }
+    private static void createTree(){
         rootOfTree = new Node(list.get(0));
         for(int i = 1; i < list.size(); i++){
             int num = list.get(i);
@@ -79,8 +132,8 @@ public class tre1 {
             }
         }
     }
-    private static class Node{
-        private final int a;
+    static class Node{
+        private int a;
         private Node left,right,parent;
         Node(int a){
             this.a = a;
