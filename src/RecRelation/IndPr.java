@@ -3,7 +3,7 @@ package RecRelation;
 import java.util.Arrays;
 import java.util.Scanner;
 
-public class indpr {
+public class IndPr {
     private static void start(){
         Scanner sc = new Scanner(System.in);
         int n = sc.nextInt();
