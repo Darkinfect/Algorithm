@@ -9,9 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class IndTree {
-    private static List<Node> targetNodes = new ArrayList<>();
     private static Node rootOfTree;
-    private static int balancedCount;
     private static List<Integer> list = new ArrayList<>();
     private static void readFile(){
         try{
@@ -35,97 +33,78 @@ public class IndTree {
         readFile();
         createTree();
         list.clear();
-        balancedCount = 0;
         computeHeights(rootOfTree);
-        clrFindMiddle(rootOfTree);
-        if(targetNodes.size() % 2 ==0){
-            clr(rootOfTree);
-            writeInList(list);
-        }else {
-            for(Node node : targetNodes){
-                deleteRight(node);
-            }
+        Node somenode = clrFindMiddle();
+        if(somenode !=null){
+            deleteRight(somenode);
         }
+        clr(rootOfTree);
+        writeInList(list);
     }
     public static void main(String[] args) {
         start();
     }
 
-    private static void checkNode(Node target){
-        if(target.left != null && target.right != null) {
-            if (target.left.height != target.right.height) {
-                int counleft = calcCount(target.left);
-                int countright = calcCount(target.right);
-                if (countright == counleft) {
-                    targetNodes.add(target);
-                }
-            }
+    private static boolean checkNode(Node target){
+        if(target == null) return false;
+        int heightLeft = (target.left != null) ? target.left.height : -1;
+        int heightRight = (target.right != null) ? target.right.height : -1;
+        if (heightLeft == heightRight) {
+            return false;
         }
+        int countLeft = (target.left != null) ? calcCount(target.left) : 0;
+        int countRight = (target.right != null) ? calcCount(target.right) : 0;
+        return countRight == countLeft;
     }
-    private static void deleteRight(Node targetNode){
-        if(targetNode == null) {
-            clr(rootOfTree);
-            return;
-        }
-        Node res;
-        if(targetNode.left == null){
-            res = targetNode.right;
-        }else if(targetNode.right == null){
-            res = targetNode.left;
-        }else{
-            Node minNodePar = targetNode;
-            Node minNode = targetNode.right;
-            while(minNode.left != null){
-                minNodePar = minNode;
-                minNode = minNode.left;
-            }
-            targetNode.a = minNode.a;
-            replChild(minNodePar,minNode,minNode.right);
-            clr(rootOfTree);
-            return;
-        }
-        replChild(targetNode.parent,targetNode,res);
-        clr(rootOfTree);
-    }
-    private static void replChild(Node par, Node old, Node newCh){
-        if(par == null){
-            rootOfTree = newCh;
-        }else if(par.left== old){
-            par.left = newCh;
-        }else if(par.right == old){
-            par.right = newCh;
-        }
-    }
-    private static int calcCount(Node node){
-        if(node !=null){
+    private static int calcCount(Node node) {
+        if (node != null) {
             int count = 0;
             Deque<Node> st = new ArrayDeque<>();
-            st.push(rootOfTree);
-            while (!st.isEmpty()){
+            st.push(node);
+            while (!st.isEmpty()) {
                 Node curr = st.pop();
                 count++;
-                if(curr.right != null) st.push(curr.right);
-                if(curr.left != null) st.push(curr.left);
+                if (curr.right != null) st.push(curr.right);
+                if (curr.left != null) st.push(curr.left);
             }
+            return count;
         }
-        return -1;
+        return 0;
     }
-    public static void clrFindMiddle(Node node){
-        if(node !=null){
+    public static Node clrFindMiddle(){
+        int count =0;
+        if(rootOfTree !=null){
             Deque<Node> st = new ArrayDeque<>();
             st.push(rootOfTree);
             while (!st.isEmpty()){
                 Node curr = st.pop();
-                checkNode(curr);
+                if(checkNode(curr)) {
+                    count++;
+                }
                 if(curr.right != null) st.push(curr.right);
                 if(curr.left != null) st.push(curr.left);
             }
+            if(count % 2 == 0 ) return null;
+            int val = (count-1)/2 +1;
+            st.push(rootOfTree);
+            while (!st.isEmpty()){
+                Node curr = st.pop();
+                if(checkNode(curr)) val--;
+                if(val == 0) {
+                    if(checkNode(curr)) {
+                        return curr;
+                    }else return null;
+                }
+                if(curr.left != null) st.push(curr.left);
+                if(curr.right != null) st.push(curr.right);
+            }
         }
+        return null;
     }
     public static void clr(Node node){
         if(node !=null){
             Deque<Node> st = new ArrayDeque<>();
-            st.push(rootOfTree);
+            st.push(node);
             while (!st.isEmpty()){
                 Node curr = st.pop();
                 list.add(curr.a);
@@ -134,6 +113,7 @@ public class IndTree {
             }
         }
     }
+
     private static int computeHeights(Node v) {
         if (v == null) {
             return -1;
@@ -144,14 +124,43 @@ public class IndTree {
 
         v.height = 1 + Math.max(hLeft, hRight);
 
-        if (hLeft == hRight) {
-            balancedCount++;
-        }
-
         return v.height;
     }
+    private static void deleteRight(Node targetNode){
+        if(targetNode == null) {
+            return;
+        }
+        Node res;
+        if(targetNode.left == null){
+            res = targetNode.right;
+            replChild(targetNode.parent,targetNode,res);
+        }else if(targetNode.right == null){
+            res = targetNode.left;
+            replChild(targetNode.parent,targetNode,res);
+        }else{
+            Node minNodePar = targetNode;
+            Node minNode = targetNode.right;
+            while(minNode.left != null){
+                minNodePar = minNode;
+                minNode = minNode.left;
+            }
+            targetNode.a = minNode.a;
+            replChild(minNodePar,minNode,minNode.right);
+        }
+    }
 
-
+    private static void replChild(Node par, Node old, Node newCh){
+        if(par == null){
+            rootOfTree = newCh;
+            newCh.parent  =null;
+        }else if(par.left== old){
+            par.left = newCh;
+            newCh.parent = par;
+        }else if(par.right == old){
+            par.right = newCh;
+            newCh.parent = par;
+        }
+    }
     private static void createTree(){
         rootOfTree = new Node(list.get(0));
         for(int i = 1; i < list.size(); i++){
@@ -178,19 +187,6 @@ public class IndTree {
                 }
             }
         }
-    }
-    private static Node findCurr(int target){
-        Node currNode = rootOfTree;
-        while(currNode != null){
-            if(currNode.a == target){
-                return currNode;
-            }else if(currNode.a < target){
-                currNode = currNode.right;
-            }else {
-                currNode = currNode.left;
-            }
-        }
-        return null;
     }
     static class Node{
         private int a;
