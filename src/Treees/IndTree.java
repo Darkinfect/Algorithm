@@ -34,6 +34,7 @@ public class IndTree {
         createTree();
         list.clear();
         computeHeights(rootOfTree);
+        calcCount(rootOfTree);
         Node somenode = clrFindMiddle();
         if(somenode !=null){
             deleteRight(somenode);
@@ -52,24 +53,28 @@ public class IndTree {
         if (heightLeft == heightRight) {
             return false;
         }
-        int countLeft = (target.left != null) ? calcCount(target.left) : 0;
-        int countRight = (target.right != null) ? calcCount(target.right) : 0;
+        int countLeft = (target.left != null) ? target.countChildrenLeft : 0;
+        int countRight = (target.right != null) ? target.countChildrenRight : 0;
         return countRight == countLeft;
     }
-    private static int calcCount(Node node) {
-        if (node != null) {
-            int count = 0;
-            Deque<Node> st = new ArrayDeque<>();
-            st.push(node);
-            while (!st.isEmpty()) {
-                Node curr = st.pop();
-                count++;
-                if (curr.right != null) st.push(curr.right);
-                if (curr.left != null) st.push(curr.left);
-            }
-            return count;
+    private static void calcCount(Node node) {
+        if (node == null) {
+            return;
         }
-        return 0;
+
+        calcCount(node.left);
+        calcCount(node.right);
+        if(node.left == null){
+            node.countChildrenLeft =0;
+        }else {
+            node.countChildrenLeft = node.left.countChildrenLeft + node.left.countChildrenRight +1;
+        }
+
+        if(node.right == null){
+            node.countChildrenRight =0;
+        }else {
+            node.countChildrenRight = node.right.countChildrenLeft + node.right.countChildrenRight +1;
+        }
     }
     public static Node clrFindMiddle(){
         int count =0;
@@ -86,17 +91,24 @@ public class IndTree {
             }
             if(count % 2 == 0 ) return null;
             int val = (count-1)/2 +1;
-            st.push(rootOfTree);
-            while (!st.isEmpty()){
-                Node curr = st.pop();
-                if(checkNode(curr)) val--;
+            Stack<Node> stack = new Stack<>();
+            Node current = rootOfTree;
+
+            while (current != null || !stack.isEmpty()) {
+                while (current != null) {
+                    stack.push(current);
+                    current = current.left;
+                }
+
+                current = stack.pop();
+                if(checkNode(current)) val--;
                 if(val == 0) {
-                    if(checkNode(curr)) {
-                        return curr;
+                    if(checkNode(current)) {
+                        return current;
                     }else return null;
                 }
-                if(curr.left != null) st.push(curr.left);
-                if(curr.right != null) st.push(curr.right);
+
+                current = current.right;
             }
         }
         return null;
@@ -152,13 +164,19 @@ public class IndTree {
     private static void replChild(Node par, Node old, Node newCh){
         if(par == null){
             rootOfTree = newCh;
-            newCh.parent  =null;
+            if(newCh != null){
+                newCh.parent  =null;
+            }
         }else if(par.left== old){
             par.left = newCh;
-            newCh.parent = par;
+            if(newCh != null){
+                newCh.parent  =null;
+            }
         }else if(par.right == old){
             par.right = newCh;
-            newCh.parent = par;
+            if(newCh != null){
+                newCh.parent  =null;
+            }
         }
     }
     private static void createTree(){
@@ -190,7 +208,7 @@ public class IndTree {
     }
     static class Node{
         private int a;
-        private int  height;
+        private int  height,countChildrenLeft, countChildrenRight;
         private Node left,right,parent;
         Node(int num){
             this.a = num;
