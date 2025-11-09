@@ -6,9 +6,15 @@ import Treees.HuffmanAutoTester;
 import Treees.IndTree;
 import Treees.tre3;
 
+import java.time.Duration;
+import java.time.Instant;
+
 public class Main {
     public static void main(String[] args) {
-        HuffmanAutoTester tester = new HuffmanAutoTester("tests",false,false);
-        tester.runAllTests();
+        Instant start = Instant.now();
+
+        Instant end = Instant.now();
+        Duration duration = Duration.between(start,end);
+        System.out.println(duration.toMillis() + "мс");
     }
 }
