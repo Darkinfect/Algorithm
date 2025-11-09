@@ -5,112 +5,162 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * Автотестер для проверки производительности и корректности алгоритма Хаффмана (specSD3).
- * Генерирует тестовые файлы, запускает specSD3.start(), измеряет время, валидирует результаты.
+ * Обновленный автотестер для алгоритма Хаффмана под новый формат файлов.
+ * Поддерживает файлы huffman_test_1.in ... huffman_test_30.in с отсортированными частотами.
  */
 public class HuffmanAutoTester {
 
-    // Конфигурация тестера
-    private final String templatePath;
-    private final int iterations;
-    private final int minN;
-    private final int maxN;
-    private final long seed;
+    private final String testDirectory;
     private final boolean validateResults;
-
-    // Результаты тестов
+    private final boolean verbose;
     private final List<TestResult> results = new ArrayList<>();
 
     /**
-     * Конструктор автотестера.
-     * @param templatePath путь к шаблонному файлу (не используется, но для расширения)
-     * @param iterations количество итераций для каждого теста
-     * @param minN минимальное n для генерации
-     * @param maxN максимальное n для генерации
-     * @param seed seed для генератора случайных чисел
-     * @param validateResults включить валидацию результатов
+     * Конструктор.
+     * @param testDirectory директория с тестовыми файлами
+     * @param validateResults включить валидацию (может быть медленно для больших n)
+     * @param verbose выводить детальную информацию
      */
-    public HuffmanAutoTester(String templatePath, int iterations, int minN, int maxN,
-                             long seed, boolean validateResults) {
-        this.templatePath = templatePath;
-        this.iterations = iterations;
-        this.minN = minN;
-        this.maxN = maxN;
-        this.seed = seed;
+    public HuffmanAutoTester(String testDirectory, boolean validateResults, boolean verbose) {
+        this.testDirectory = testDirectory;
         this.validateResults = validateResults;
+        this.verbose = verbose;
     }
 
     /**
-     * Главный метод запуска тестов.
-     * @param configCsv путь к CSV-конфигурации (null для дефолтных тестов)
+     * Главный метод: находит все тестовые файлы и запускает их.
      */
-    public void runTests(String configCsv) {
-        List<TestConfig> configs;
+    public void runAllTests() {
+        List<File> testFiles = findTestFiles();
 
-        if (configCsv != null && Files.exists(Paths.get(configCsv))) {
-            configs = loadConfigFromCsv(configCsv);
-            System.out.println("Loaded " + configs.size() + " test configs from " + configCsv);
-        } else {
-            // Дефолтные тесты: 5 типов с разными n
-            configs = getDefaultConfigs();
-            System.out.println("Using default test configurations (5 tests)");
+        if (testFiles.isEmpty()) {
+            System.err.println("No test files found matching pattern huffman_test_*.in");
+            return;
         }
+
+        testFiles.sort(Comparator.comparing(File::getName));
+        System.out.println("Found " + testFiles.size() + " test files\n");
 
         int testId = 1;
-        for (TestConfig config : configs) {
-            System.out.println("\n=== Running test: " + config.testType + ", n=" + config.n +
-                    ", iterations=" + config.iterations + " ===");
-
-            for (int iter = 1; iter <= config.iterations; iter++) {
-                try {
-                    // Генерация входного файла
-                    List<Long> frequencies = FileGenerator.generateInputFile(
-                            "huffman.in", config.testType, config.n, config.seed + iter
-                    );
-
-                    // Вычисление ожидаемого результата (если включена валидация)
-                    long expectedTotal = validateResults ? computeExpectedTotal(frequencies) : -1;
-
-                    // Замер времени выполнения specSD3.start()
-                    long startTime = System.nanoTime();
-                    SpecSD.specSD3.main(null);  // Запуск статического метода
-                    long endTime = System.nanoTime();
-                    double timeMsec = (endTime - startTime) / 1_000_000.0;
-
-                    // Чтение результата из huffman.out
-                    long totalFromOut = readOutputFile("huffman.out");
-
-                    // Валидация результата
-                    boolean passed = !validateResults || (totalFromOut == expectedTotal);
-                    String status = passed ? "PASS" : "FAIL";
-
-                    // Сохранение результата
-                    TestResult result = new TestResult(
-                            testId++, config.testType, config.n, iter,
-                            timeMsec, totalFromOut, expectedTotal, status
-                    );
-                    results.add(result);
-
-                    System.out.printf("  Iteration %d: %.2f ms, total=%d, expected=%d, %s\n",
-                            iter, timeMsec, totalFromOut, expectedTotal, status);
-
-                } catch (Exception e) {
-                    System.err.println("  Iteration " + iter + " FAILED: " + e.getMessage());
-                    results.add(new TestResult(
-                            testId++, config.testType, config.n, iter,
-                            -1, -1, -1, "FAIL_ERROR: " + e.getMessage()
-                    ));
-                }
-            }
+        for (File testFile : testFiles) {
+            runSingleTest(testFile, testId++);
         }
 
-        // Вывод результатов
         exportResultsToCsv("results.csv");
         printSummary();
     }
 
     /**
-     * Вычисление ожидаемого total с использованием стандартного алгоритма Хаффмана (min-heap).
+     * Находит все файлы huffman_test_*.in в директории.
+     */
+    private List<File> findTestFiles() {
+        List<File> files = new ArrayList<>();
+
+        try {
+            File dir = new File(testDirectory);
+            File[] allFiles = dir.listFiles((d, name) ->
+                    name.matches("huffman_test_\\d+\\.in"));
+
+            if (allFiles != null) {
+                files.addAll(Arrays.asList(allFiles));
+            }
+        } catch (Exception e) {
+            System.err.println("Error finding test files: " + e.getMessage());
+        }
+
+        return files;
+    }
+
+    /**
+     * Запуск одного теста.
+     */
+    private void runSingleTest(File testFile, int testId) {
+        try {
+            // Чтение входного файла
+            System.out.print("Test " + testId + " (" + testFile.getName() + "): ");
+
+            TestInput input = readTestInput(testFile.getAbsolutePath());
+            int n = input.n;
+            List<Long> frequencies = input.frequencies;
+
+            // Проверка отсортированности
+            boolean isSorted = isSorted(frequencies);
+            if (!isSorted && verbose) {
+                System.out.println("WARNING: frequencies not sorted");
+            }
+
+            // Копирование в стандартный входной файл
+            File standardInput = new File("huffman.in");
+            Files.copy(testFile.toPath(), standardInput.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            // Вычисление ожидаемого результата
+            long expectedTotal = validateResults ? computeExpectedTotal(frequencies) : -1;
+
+            // Замер времени выполнения
+            long startTime = System.nanoTime();
+            SpecSD.specSD3.main(null);
+            long endTime = System.nanoTime();
+            double timeMsec = (endTime - startTime) / 1_000_000.0;
+
+            // Чтение результата
+            long totalFromOut = readOutputFile("huffman.out");
+
+            // Валидация
+            boolean passed = !validateResults || (totalFromOut == expectedTotal);
+            String status = passed ? "PASS" : "FAIL";
+
+            // Сохранение результата
+            TestResult result = new TestResult(
+                    testId, n, timeMsec, totalFromOut, expectedTotal, status, isSorted
+            );
+            results.add(result);
+
+
+            // Вывод
+            double timePerSymbol = n > 0 ? timeMsec / n * 1000 : 0;  // мкс на элемент
+            System.out.printf("n=%7d, time=%.2f ms (%.3f µs/elem), total=%,d, %s\n",
+                    n, timeMsec, timePerSymbol, totalFromOut, status);
+
+        } catch (Exception e) {
+            System.err.println("Test " + testId + " ERROR: " + e.getMessage());
+            results.add(new TestResult(testId, -1, -1, -1, -1, "FAIL_ERROR: " + e.getMessage(), false));
+        }
+    }
+
+    /**
+     * Чтение входного файла.
+     */
+    private TestInput readTestInput(String path) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path), 131072)) {
+            int n = Integer.parseInt(reader.readLine().trim());
+            String line = reader.readLine().trim();
+            String[] parts = line.split("\\s+");
+
+            List<Long> frequencies = new ArrayList<>(n);
+            for (String part : parts) {
+                frequencies.add(Long.parseLong(part));
+            }
+
+            return new TestInput(n, frequencies);
+        }
+    }
+
+    /**
+     * Проверка отсортированности массива.
+     */
+    private boolean isSorted(List<Long> list) {
+        for (int i = 1; i < list.size(); i++) {
+            if (list.get(i) < list.get(i - 1)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Вычисление ожидаемого total с использованием стандартного Хаффмана (min-heap).
+     * ВНИМАНИЕ: Медленно для n > 100000!
      */
     private long computeExpectedTotal(List<Long> frequencies) {
         if (frequencies.size() <= 1) return 0;
@@ -130,7 +180,7 @@ public class HuffmanAutoTester {
     }
 
     /**
-     * Чтение результата из выходного файла huffman.out.
+     * Чтение результата из huffman.out.
      */
     private long readOutputFile(String path) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
@@ -143,234 +193,167 @@ public class HuffmanAutoTester {
     }
 
     /**
-     * Загрузка конфигураций тестов из CSV-файла.
-     */
-    private List<TestConfig> loadConfigFromCsv(String csvPath) {
-        List<TestConfig> configs = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(csvPath))) {
-            String line = reader.readLine(); // Пропускаем заголовок
-
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length >= 4) {
-                    String testType = parts[0].trim();
-                    int n = Integer.parseInt(parts[1].trim());
-                    int iters = Integer.parseInt(parts[2].trim());
-                    long seedVal = Long.parseLong(parts[3].trim());
-                    configs.add(new TestConfig(testType, n, iters, seedVal));
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading CSV config: " + e.getMessage());
-        }
-
-        return configs;
-    }
-
-    /**
-     * Дефолтные конфигурации тестов.
-     */
-    private List<TestConfig> getDefaultConfigs() {
-        return Arrays.asList(
-                new TestConfig("sorted", 100, 3, seed),
-                new TestConfig("random", 1000, 3, seed),
-                new TestConfig("sorted", 10000, 3, seed),
-                new TestConfig("duplicates", 100000, 2, seed),
-                new TestConfig("random", 500000, 1, seed)
-        );
-    }
-
-    /**
-     * Экспорт результатов в CSV-файл.
+     * Экспорт результатов в CSV.
      */
     private void exportResultsToCsv(String csvPath) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(csvPath))) {
-            writer.println("testId,type,n,iteration,time_ms,total_from_out,expected_total,status");
+            writer.println("testId,n,time_ms,total_from_out,expected_total,status,sorted");
 
             for (TestResult result : results) {
-                writer.printf("%d,%s,%d,%d,%.2f,%d,%d,%s\n",
-                        result.testId, result.type, result.n, result.iteration,
-                        result.timeMsec, result.totalFromOut, result.expectedTotal, result.status);
+                writer.printf("%d,%d,%.2f,%d,%d,%s,%b\n",
+                        result.testId, result.n, result.timeMsec,
+                        result.totalFromOut, result.expectedTotal,
+                        result.status, result.isSorted);
             }
 
-            System.out.println("\nResults exported to " + csvPath);
+            System.out.println("\n✓ Results exported to " + csvPath);
         } catch (IOException e) {
             System.err.println("Error exporting results: " + e.getMessage());
         }
     }
 
     /**
-     * Вывод статистики в консоль.
+     * Вывод статистики и прогноза.
      */
     private void printSummary() {
-        System.out.println("\n=== SUMMARY ===");
+        System.out.println("\n" + "=".repeat(80));
+        System.out.println("SUMMARY");
+        System.out.println("=".repeat(80));
 
-        Map<String, List<Double>> timesByType = new HashMap<>();
         int totalTests = results.size();
-        int failedTests = 0;
+        int passedTests = 0;
+        long totalTimeMs = 0;
+        double maxTimePerSymbol = 0;
 
         for (TestResult result : results) {
-            if (result.status.startsWith("FAIL")) {
-                failedTests++;
-            }
+            if (result.status.equals("PASS")) passedTests++;
             if (result.timeMsec >= 0) {
-                timesByType.computeIfAbsent(result.type, k -> new ArrayList<>())
-                        .add(result.timeMsec);
+                totalTimeMs += (long) result.timeMsec;
+                if (result.n > 0) {
+                    double timePerSymbol = result.timeMsec / result.n;
+                    maxTimePerSymbol = Math.max(maxTimePerSymbol, timePerSymbol);
+                }
             }
+
         }
 
         System.out.println("Total tests: " + totalTests);
-        System.out.println("Failed tests: " + failedTests + " (" +
-                String.format("%.1f%%", 100.0 * failedTests / totalTests) + ")");
-        System.out.println("\nAverage times by type:");
+        System.out.println("Passed: " + passedTests + " (" + String.format("%.1f%%", 100.0 * passedTests / totalTests) + ")");
+        System.out.println("Total time: " + totalTimeMs + " ms");
+        System.out.println("Average time per test: " + String.format("%.2f ms", (double) totalTimeMs / totalTests));
 
-        for (Map.Entry<String, List<Double>> entry : timesByType.entrySet()) {
-            List<Double> times = entry.getValue();
-            double avgTime = times.stream().mapToDouble(Double::doubleValue).average().orElse(0);
-            double minTime = times.stream().mapToDouble(Double::doubleValue).min().orElse(0);
-            double maxTime = times.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+        // Прогноз для n=2.5млн
+        System.out.println("\nForecast for n=2,500,000:");
+        double forecastTimeMs = maxTimePerSymbol * 2_500_000 / 1000;
+        System.out.println("  Estimated time: " + String.format("%.2f ms (%.2f seconds)", forecastTimeMs, forecastTimeMs / 1000));
 
-            System.out.printf("  %s: avg=%.2f ms, min=%.2f ms, max=%.2f ms\n",
-                    entry.getKey(), avgTime, minTime, maxTime);
-        }
-    }
-
-    // === ВНУТРЕННИЕ КЛАССЫ ===
-
-    /**
-     * Генератор тестовых файлов.
-     */
-    static class FileGenerator {
-        /**
-         * Генерация входного файла с частотами.
-         * @param outputPath путь к выходному файлу (huffman.in)
-         * @param testType тип теста: random, sorted, duplicates
-         * @param n количество частот
-         * @param seed seed для генератора
-         * @return список сгенерированных частот
-         */
-        public static List<Long> generateInputFile(String outputPath, String testType,
-                                                   int n, long seed) throws IOException {
-            Random random = new Random(seed);
-            List<Long> frequencies = new ArrayList<>(n);
-
-            // Генерация частот в зависимости от типа
-            switch (testType.toLowerCase()) {
-                case "sorted":
-                    for (int i = 1; i <= n; i++) {
-                        frequencies.add((long) i);
-                    }
-                    break;
-
-                case "duplicates":
-                    int half = n / 2;
-                    for (int i = 0; i < half; i++) frequencies.add(1L);
-                    for (int i = half; i < n; i++) frequencies.add(2L);
-                    break;
-
-                case "random":
-                default:
-                    for (int i = 0; i < n; i++) {
-                        frequencies.add(1L + (long)(random.nextDouble() * 1_000_000_000));
-                    }
-                    break;
-            }
-
-            // Запись в файл
-            try (PrintWriter writer = new PrintWriter(new FileWriter(outputPath))) {
-                writer.println(n);
-                for (int i = 0; i < frequencies.size(); i++) {
-                    if (i > 0) writer.print(" ");
-                    writer.print(frequencies.get(i));
-                }
-                writer.println();
-            }
-
-            return frequencies;
+        // Группировка по размерам
+        System.out.println("\nPerformance by size category:");
+        Map<String, List<TestResult>> byCategory = categorizeBySize();
+        for (Map.Entry<String, List<TestResult>> entry : byCategory.entrySet()) {
+            List<TestResult> category = entry.getValue();
+            double avgTime = category.stream()
+                    .filter(r -> r.timeMsec >= 0)
+                    .mapToDouble(r -> r.timeMsec)
+                    .average()
+                    .orElse(0);
+            int avgN = (int) category.stream()
+                    .filter(r -> r.n > 0)
+                    .mapToInt(r -> r.n)
+                    .average()
+                    .orElse(0);
+            System.out.printf("  %s (avg n=%,d): %.2f ms avg\n", entry.getKey(), avgN, avgTime);
         }
     }
 
     /**
-     * Конфигурация теста.
+     * Категоризация тестов по размеру.
      */
-    static class TestConfig {
-        String testType;
+    private Map<String, List<TestResult>> categorizeBySize() {
+        Map<String, List<TestResult>> categories = new LinkedHashMap<>();
+        categories.put("Tiny (n<100)", new ArrayList<>());
+        categories.put("Small (100-1k)", new ArrayList<>());
+        categories.put("Medium (1k-100k)", new ArrayList<>());
+        categories.put("Large (100k-1M)", new ArrayList<>());
+        categories.put("Huge (>1M)", new ArrayList<>());
+
+        for (TestResult result : results) {
+            if (result.n < 100) {
+                categories.get("Tiny (n<100)").add(result);
+            } else if (result.n < 1000) {
+                categories.get("Small (100-1k)").add(result);
+            } else if (result.n < 100_000) {
+                categories.get("Medium (1k-100k)").add(result);
+            } else if (result.n < 1_000_000) {
+                categories.get("Large (100k-1M)").add(result);
+            } else {
+                categories.get("Huge (>1M)").add(result);
+            }
+        }
+
+        return categories;
+    }
+
+    // === ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ ===
+
+    static class TestInput {
         int n;
-        int iterations;
-        long seed;
+        List<Long> frequencies;
 
-        TestConfig(String testType, int n, int iterations, long seed) {
-            this.testType = testType;
+        TestInput(int n, List<Long> frequencies) {
             this.n = n;
-            this.iterations = iterations;
-            this.seed = seed;
+            this.frequencies = frequencies;
         }
     }
 
-    /**
-     * Результат теста.
-     */
     static class TestResult {
         int testId;
-        String type;
         int n;
-        int iteration;
         double timeMsec;
         long totalFromOut;
         long expectedTotal;
         String status;
+        boolean isSorted;
 
-        TestResult(int testId, String type, int n, int iteration, double timeMsec,
-                   long totalFromOut, long expectedTotal, String status) {
+        TestResult(int testId, int n, double timeMsec, long totalFromOut,
+                   long expectedTotal, String status, boolean isSorted) {
             this.testId = testId;
-            this.type = type;
             this.n = n;
-            this.iteration = iteration;
             this.timeMsec = timeMsec;
             this.totalFromOut = totalFromOut;
             this.expectedTotal = expectedTotal;
             this.status = status;
+            this.isSorted = isSorted;
         }
     }
 
     // === MAIN ===
 
     /**
-     * Точка входа для запуска автотестера.
-     * Аргументы командной строки:
-     *   --config <path>: путь к CSV-конфигурации (опционально)
-     *   --iterations <n>: количество итераций (по умолчанию 3)
-     *   --validate: включить валидацию результатов
+     * Точка входа.
+     * Аргументы:
+     *   --dir <path>: директория с тестами (по умолчанию текущая)
+     *   --validate: включить валидацию (медленно!)
+     *   --verbose: подробный вывод
      */
     public static void main(String[] args) {
-        // Парсинг аргументов
-        String configPath = null;
-        int iterations = 3;
+        String testDir = ".";
         boolean validate = false;
+        boolean verbose = false;
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("--config") && i + 1 < args.length) {
-                configPath = args[++i];
-            } else if (args[i].equals("--iterations") && i + 1 < args.length) {
-                iterations = Integer.parseInt(args[++i]);
+            if (args[i].equals("--dir") && i + 1 < args.length) {
+                testDir = args[++i];
+
             } else if (args[i].equals("--validate")) {
                 validate = true;
+            } else if (args[i].equals("--verbose")) {
+                verbose = true;
             }
         }
 
-        // Создание и запуск тестера
-        HuffmanAutoTester tester = new HuffmanAutoTester(
-                "template.in",  // Не используется в текущей реализации
-                iterations,
-                100,            // minN
-                1000000,        // maxN
-                42L,            // seed
-                validate
-        );
-
-        tester.runTests(configPath);
-
-        System.out.println("\n=== Testing completed ===");
+        HuffmanAutoTester tester = new HuffmanAutoTester(testDir, validate, verbose);
+        tester.runAllTests();
     }
 }
+

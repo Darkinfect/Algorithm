@@ -1,15 +1,12 @@
 package SpecSD;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 
 public class specSD3 {
     private static int n;
     private static void readFile(Queue<Long> leaves){
-        try(BufferedReader reader = new BufferedReader(new FileReader("huffman.in"),65536)){
+        try(BufferedReader reader = new BufferedReader(new FileReader("huffman.in"),262144)){
             String line1 = reader.readLine().trim();
             n = Integer.parseInt(line1);
             String line2 = reader.readLine().trim();
@@ -22,13 +19,13 @@ public class specSD3 {
         }
     }
     private static void writeInList(Long in) {
-        try (PrintWriter out = new PrintWriter(new FileWriter("huffman.out"))) {
+        try (PrintWriter out = new PrintWriter(new BufferedOutputStream(new FileOutputStream("huffman.out"),262144))) {
             out.println(in);
         } catch (Exception exception) {
             exception.printStackTrace(System.err);
         }
     }
-    private static long min(Queue<Long> leaves,Queue<Long> parents){
+    private static long min(Deque<Long> leaves,Deque<Long> parents){
         if (leaves.isEmpty()) {
             return parents.poll();
         } else if (parents.isEmpty()) {
