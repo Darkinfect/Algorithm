@@ -15,12 +15,10 @@ public class specSD4 {
             exception.printStackTrace(System.err);
         }
     }
-    public static void start(){
-        try(BufferedReader reader = new BufferedReader(new FileReader("input.txt"))){
-            String line1 = reader.readLine();
-            String[] str = line1.split(" ");
-            int n = Integer.parseInt(str[0]);
-            int q = Integer.parseInt(str[1]);
+    public static void start() throws IOException {
+            FastScanner scanner= new FastScanner("input.txt");
+            int n = scanner.nextInt();
+            int q = scanner.nextInt();
             List<Integer> count = new ArrayList<>();
             List<Integer> res = new ArrayList<>();
             count.add(n);
@@ -30,16 +28,12 @@ public class specSD4 {
                 lead.add(i);
             }
             for(int i =0; i < q; i++){
-                String[] sl = reader.readLine().split("\\s+");
-                int u = Integer.parseInt(sl[0]);
-                int v = Integer.parseInt(sl[1]);
+                int u = scanner.nextInt();
+                int v = scanner.nextInt();
                 make(count,lead,size,u-1,v-1);
                 res.add(count.get(0));
             }
             writeInList(res);
-        }catch (Exception e){
-            e.printStackTrace(System.err);
-        }
     }
     private static void make(List<Integer> count, List<Integer> lead, List<Integer> size, int x, int y){
         x = find(lead,x);
@@ -64,7 +58,42 @@ public class specSD4 {
       lead.set(a,root);
       return root;
     }
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         start();
+    }
+    static final class FastScanner {
+        private final InputStream in;
+        private final byte[] buffer = new byte[1 << 20];
+        private int ptr = 0, len = 0;
+
+        FastScanner(String file) throws FileNotFoundException {
+            this.in = new BufferedInputStream(new FileInputStream(file), 1 << 20);
+        }
+
+        private int read() throws IOException {
+            if (ptr >= len) {
+                len = in.read(buffer);
+                ptr = 0;
+                if (len <= 0) return -1;
+            }
+            return buffer[ptr++];
+        }
+
+        long nextLong() throws IOException {
+            int c;
+            do { c = read(); } while (c <= 32);
+            boolean neg = false;
+            if (c == '-') { neg = true; c = read(); }
+            long x = 0;
+            while (c > 32) {
+                x = x * 10 + (c - '0');
+                c = read();
+            }
+            return neg ? -x : x;
+        }
+
+        int nextInt() throws IOException {
+            return (int) nextLong();
+        }
     }
 }

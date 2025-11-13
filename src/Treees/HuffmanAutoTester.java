@@ -337,7 +337,7 @@ public class HuffmanAutoTester {
      *   --verbose: подробный вывод
      */
     public static void main(String[] args) {
-        String testDir = ".";
+        String testDir = "tests";
         boolean validate = false;
         boolean verbose = false;
 

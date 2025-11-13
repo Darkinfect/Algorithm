@@ -1,10 +1,8 @@
 package SpecSD;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SpecSDGV {
@@ -100,4 +98,57 @@ public class SpecSDGV {
                 right = null;
             }
         }
+//    public static void start() throws IOException {
+//        try {
+//            specSD3.FastScanner fs = new specSD3.FastScanner("huffman.in");
+//            int n = fs.nextInt();
+//            if (n <= 1) {
+//                try (PrintWriter out = new PrintWriter(new BufferedOutputStream(new FileOutputStream("huffman.out"), 1 << 18))) {
+//                    out.println(0L);
+//                }
+//                return;
+//            }
+//
+//            long[] a = new long[n];
+//            for (int i = 0; i < n; i++) a[i] = fs.nextLong();
+//            Arrays.sort(a);
+//            long[] b = new long[n - 1];
+//            int i = 0;
+//            int p = 0, q = 0;
+//            long total = 0L;
+//            for (int step = 0; step < n - 1; step++) {
+//                long x1;
+//                boolean haveA = (i < n);
+//                boolean haveB = (p < q);
+//                if (haveA && haveB) {
+//                    if (a[i] <= b[p]) { x1 = a[i++]; }
+//                    else { x1 = b[p++]; }
+//                } else if (haveA) {
+//                    x1 = a[i++];
+//                } else {
+//                    x1 = b[p++];
+//                }
+//
+//                long x2;
+//                haveA = (i < n);
+//                haveB = (p < q);
+//                if (haveA && haveB) {
+//                    if (a[i] <= b[p]) { x2 = a[i++]; }
+//                    else { x2 = b[p++]; }
+//                } else if (haveA) {
+//                    x2 = a[i++];
+//                } else {
+//                    x2 = b[p++];
+//                }
+//                long s = x1 + x2;
+//                total += s;
+//                b[q++] = s;
+//            }
+//            try (PrintWriter out = new PrintWriter(new BufferedOutputStream(new FileOutputStream("huffman.out"), 1 << 18))) {
+//                out.println(total);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace(System.err);
+//        }
+//    }
 }
