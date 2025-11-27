@@ -1,11 +1,13 @@
 package GraphsAlgorithm;
 
 import java.io.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 
-public class GrAl4 {
+public class GrAl5 {
     public static void main(String[] args) throws IOException {
-        FastScanner scanner = new FastScanner(new FileInputStream("input.txt"));
+      GrAl4.FastScanner scanner = new GrAl4.FastScanner(new FileInputStream("input.txt"));
         PrintWriter out = new PrintWriter(new BufferedOutputStream(new FileOutputStream("output.txt")));
 
         int n = scanner.nextInt();
@@ -23,25 +25,18 @@ public class GrAl4 {
         Queue<Integer> queue = new LinkedList<>();
         queue.add(0);
         visited[0] = true;
-        resault[0] =0;
+        resault[0] =1;
         while(!(queue.isEmpty())){
             int curr = queue.poll();
             for(int i = 0; i < n;i++){
                 if(matrix[curr][i] ==1 && !visited[i]){
                     visited[i] =true;
-                    resault[i] = resault[curr] +1;
+                    resault[i] = resault[curr] +2;
                     queue.add(i);
                 }
             }
         }
 
-        for (int i = 0; i < n; i++) {
-            if (resault[i] != -1) {
-                out.println("Вершина " + i + ": уровень " + resault[i]);
-            } else {
-                out.println("Вершина " + i + ": недостижима");
-            }
-        }
         out.flush();
     }
     static final class FastScanner {
