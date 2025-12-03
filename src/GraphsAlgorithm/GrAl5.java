@@ -7,12 +7,10 @@ import java.util.Queue;
 
 public class GrAl5 {
     public static void main(String[] args) throws IOException {
-      GrAl4.FastScanner scanner = new GrAl4.FastScanner(new FileInputStream("input.txt"));
+        FastScanner scanner = new FastScanner(new FileInputStream("input.txt"));
         PrintWriter out = new PrintWriter(new BufferedOutputStream(new FileOutputStream("output.txt")));
 
         int n = scanner.nextInt();
-        int[] resault = new int[n];
-        Arrays.fill(resault,-1);
         int[][] matrix = new int[n][n];
         for(int i =0; i <n; i++){
             for(int j = 0; j < n; j++){
@@ -20,24 +18,36 @@ public class GrAl5 {
                 matrix[i][j] = l;
             }
         }
-        boolean[] visited = new boolean[n];
+        int[] res = bfsMatrix(matrix,n);
+        for(int i =1; i <= n; i++){
+                out.print(res[i]);
+                out.print(" ");
+
+        }
+        out.flush();
+    }
+    private static int[] bfsMatrix(int[][] matrix,int n){
+        int[] resault = new int[n+1];
+        Arrays.fill(resault,0);
+        int counter = 0;
 
         Queue<Integer> queue = new LinkedList<>();
-        queue.add(0);
-        visited[0] = true;
-        resault[0] =1;
-        while(!(queue.isEmpty())){
-            int curr = queue.poll();
-            for(int i = 0; i < n;i++){
-                if(matrix[curr][i] ==1 && !visited[i]){
-                    visited[i] =true;
-                    resault[i] = resault[curr] +2;
-                    queue.add(i);
+        for(int start =1;start<=n; start++) {
+            if(resault[start] ==0) {
+                queue.offer(start);
+                resault[start] = ++counter;
+                while (!queue.isEmpty()) {
+                    int curr = queue.poll();
+                    for (int i = 1; i <= n; i++) {
+                        if (matrix[curr - 1][i - 1] == 1 && resault[i] == 0) {
+                            resault[i] = ++counter;
+                            queue.offer(i);
+                        }
+                    }
                 }
             }
         }
-
-        out.flush();
+        return resault;
     }
     static final class FastScanner {
         private final InputStream in;
